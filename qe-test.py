@@ -140,14 +140,14 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1):
   copy2(exe + '/pw.x', testdir)
   copy2(exe + '/pp.x', testdir)
   copy2(exe + '/plotrho.x', testdir)
-  copy2(exe + '../scripts/run.py', testdir)
+#  copy2(exe + '../scripts/run.py', testdir)
   cwd = getcwd()
   chdir(testdir)
 
   print(' NP = ' + str(np))
 
   start = time.time()
-  system('./run.py ' + inputs + '.test.in -n ' + str(np) + ' > /dev/null')
+  system('qe-run.py ' + inputs + '.test.in -n ' + str(np) + ' > /dev/null')
   time_test = time.time() - start
 
   compare_bands = exists('./bands.dat')
@@ -162,7 +162,7 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1):
 
   if rerun:
     start = time.time()
-    system('./run.py ' + inputs + '.ref.in -n ' + str(np) + ' > /dev/null')
+    system('qe-run.py ' + inputs + '.ref.in -n ' + str(np) + ' > /dev/null')
     time_ref = time.time() - start
     move('./run0.out', './run0.ref.out')
 #    move('./run1.out', './run1.ref.out')
