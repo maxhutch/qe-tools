@@ -30,9 +30,9 @@ def compare_vals(vals, name, tol = 0.001, intrinsic=True):
       err = val - vals[0]
     output.append(err)
   if intrinsic:
-    fmt = ["{:13s}  {:8.3f}  "]+["{:8.3f}  " if abs(x) <= tol else "\033[1m{:8.3f}\033[0m" for x in output[1:]]
+    fmt = ["{:13s}  {:8.3f}  "]+["{:8.3f}  " if abs(x) <= tol else "\033[1m{:8.3f}\033[0m  " for x in output[1:]]
   else:
-    fmt = ["{:13s}  {:8.3f}  "]+["{:8.2%}  " if abs(x) <= tol else "\033[1m{:8.2%}\033[0m" for x in output[1:]]
+    fmt = ["{:13s}  {:8.3f}  "]+["{:8.2%}  " if abs(x) <= tol else "\033[1m{:8.2%}\033[0m  " for x in output[1:]]
   print("".join(fmt).format(name,*output))
 
 # define a value tester
@@ -118,7 +118,7 @@ def get_tag(f, pattern, pos):
 '''
 
 
-def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1):
+def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, run_mask = None):
   # setup step
   print("------------------------------------------------------")    
 
@@ -139,6 +139,12 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1):
     copytree('./ref', './old')
     runs.insert(0, 'old')
     runs.insert(1, 'ref')
+
+  # mask the runs
+  if run_mask != None:
+    do_runs = run_mask.split(":")
+    do_runs.append("old")
+    runs = [x for x in runs if x in do_runs]
  
   # Loop over the runs, running each and recording time 
   fmt = "{:13s}  "+"{:>8s}  "*len(runs)
@@ -209,8 +215,8 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1):
 parser = OptionParser()
 parser.add_option("-e", "--executable", dest="exe", default=None,
                   help="Executable directory to be tested")
-parser.add_option("-r", "--reference", dest="exe2", default=None,
-                  help="Reference executables for comparison testing")
+parser.add_option("-r", "--runs", dest="runs", default=None,
+                  help="Only perform these runs (: separated)")
 parser.add_option("-t", "--test", dest="test", default=None,
                   help="Directory containing the test")
 parser.add_option("-s", "--set", dest="test_set", default=None,
@@ -247,23 +253,13 @@ for test in test_set:
 
   # Generate run directories 
   testdir = './internal/' + ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(4))
-  if opts.exe2 != None:
-    testdir2 = './internal/' + ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(4))
-
 
   print("Test Name: " + test)
-  if opts.exe2 == None:
-    print("Run on: " + time.strftime("%Y.%m.%d") + "  In: " + testdir)
-  else:
-   print("Run on: " + time.strftime("%Y.%m.%d") + "  In: " + testdir + "  and: " + testdir2)
+  print("Run on: " + time.strftime("%Y.%m.%d") + "  In: " + testdir)
 
 
   # run first test
-  time1 = run_test(test, opts.exe, testdir, opts.np, opts.ipm, opts.force, opts.nb)
-
-  # if on a comparison, run reference 
-  if opts.exe2 != None:
-    time2 = run_test(test, opts.exe2, testdir2, opts.np, opts.ipm, opts.nb) 
+  time1 = run_test(test, opts.exe, testdir, opts.np, opts.ipm, opts.force, opts.nb, opts.runs)
 
   print("======================================================")    
 
