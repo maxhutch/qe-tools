@@ -29,8 +29,11 @@ def compare_vals(vals, name, tol = 0.001, intrinsic=True):
     else:
       err = val - vals[0]
     output.append(err)
-  fmt = "{:13s}  "+"{:6.2f}  "*len(output)
-  print(fmt.format(name,*output))
+  if intrinsic:
+    fmt = ["{:13s}  {:8.3f}  "]+["{:8.3f}  " if abs(x) <= tol else "\033[1m{:8.3f}\033[0m" for x in output[1:]]
+  else:
+    fmt = ["{:13s}  {:8.3f}  "]+["{:8.2%}  " if abs(x) <= tol else "\033[1m{:8.2%}\033[0m" for x in output[1:]]
+  print("".join(fmt).format(name,*output))
 
 # define a value tester
 def test_output(runs, pattern, position, name, tol, intrinsic=True):
@@ -127,8 +130,6 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1):
   cwd = getcwd()
   chdir(testdir)
 
-#  print(' NP = ' + str(np))
-
   # Setup list of runs
   runs = next(walk('.'))[1];  
   runs = [x for x in runs if x != 'pseudo' and x != 'bin']
@@ -140,31 +141,29 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1):
     runs.insert(1, 'ref')
  
   # Loop over the runs, running each and recording time 
-  fmt = "{:13s}  "+"{:6s}  "*len(runs)
-  print(fmt.format("runs:", *runs))
-  print("{:13s}  ".format("time:"), end=""); stdout.flush()
+  fmt = "{:13s}  "+"{:>8s}  "*len(runs)
+  print(fmt.format("runs", *runs))
+  print("------------------------------------------------------")    
+  print("{:13s}  ".format("time (s)"), end=""); stdout.flush()
   for run in runs:
     if run == 'old':
       with open('./old/time', 'r') as f:
-        print("%5.2f\t" % float(f.readline()), end=""); stdout.flush()
+        print("%8.1f  " % float(f.readline()), end=""); stdout.flush()
       continue
     chdir(run)
     start = time.time()  
     system('qe-run.py ' + inputs + '.'+run+'.in -n ' + str(np) + ' -e ../bin/ > /dev/null')
     time_test = time.time() - start
     system('echo "'+str(time_test)+'" > time')
-    print("%5.2f\t" % time_test , end=""); stdout.flush()
+    print("%8.1f  " % time_test , end=""); stdout.flush()
     chdir('..')
   print("")
 
-  # This is the old test/ref comparison.  will be replaced
-  print("------------------------------------------------------")    
-#  with open('./test/run0.out') as test:
-#   with open('./ref/run0.out') as ref:
-  test_output(runs, "!    total energy", 4, "Total Energy", 0.01)
-  test_output(runs, "the Fermi energy", 4, "Fermi Energy", 0.01)
+  # Compare some fields
+  test_output(runs, "!    total energy", 4, "Total Energy", 0.01, intrinsic=False)
+  test_output(runs, "the Fermi energy", 4, "Fermi Energy", 0.001)
   test_output(runs, "convergence has been achieved in", 5, "N Iter", 1)
-  test_output(runs, "Total force", 3, "Total Force", 0.01)
+  test_output(runs, "Total force", 3, "Total Force", 0.01, intrinsic=False)
   test_output(runs, "total   stress", 5, "Total Stress", 1.)
   test_output(runs, "temperature", 2, "Temperature", 0.01)
 #  compare_bands = exists('./ref/bands.dat')
