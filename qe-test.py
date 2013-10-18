@@ -13,54 +13,47 @@ import string
 import numpy
 
 # define test output
-def compare_vals(name, oval, rval, tol = 0.001, intrinsic=True):
-  if not intrinsic:
-    if (rval == 0 and oval == 0):
-      err = 0.
-    elif rval == 0:
-      err = 1000000000.
+def compare_vals(vals, name, tol = 0.001, intrinsic=True):
+  output = []
+  if vals[0] == None:
+    return
+  output.append(vals[0])
+  for val in vals[1:]:
+    if not intrinsic:
+      if (vals[0] == 0 and val == 0):
+        err = 0.
+      elif vals[0] == 0:
+        err = 1000000000.
+      else:
+        err = abs((val - vals[0])/vals[0])
     else:
-      err = abs((oval - rval)/rval)
-  else:
-    err = oval - rval
-  if abs(err) < tol:
-    print(" passed  %-14s % 10.6e vs % 10.6e  (% 10.8f) " % (name, oval, rval, err))
-  else:
-    print(" FAILED  %-14s % 10.6e vs % 10.6e  (% 10.8f) " % (name, oval, rval, err))
+      err = val - vals[0]
+    output.append(err)
+  fmt = "{:13s}  "+"{:6.2f}  "*len(output)
+  print(fmt.format(name,*output))
 
 # define a value tester
-def test_output(pattern, position, name, out, ref, tol, intrinsic=True):
-  out.seek(0)
-  val_r = None
-  for line in out:
-    if pattern in line:
-      toks = line.split()
-      if len(toks) <= position:
-        continue
-      tmp = toks[position]
-      if tmp[-1] == ':':
-        tmp = tmp[0:-1]
-      try: 
-        val_o = float(tmp)
-      except ValueError:
-        val_o = 0
-  ref.seek(0)
-  for line in ref:
-    if pattern in line:
-      toks = line.split()
-      if len(toks) <= position:
-        continue
-      tmp = toks[position]
-      if tmp[-1] == ':':
-        tmp = tmp[0:-1]
-      try:
-        val_r = float(tmp)
-      except ValueError:
-        val_r = 0
-  if val_r == None:
-    return (0.,0.)
-  compare_vals(name, val_o, val_r, tol, intrinsic)
-  return (val_o, val_r)
+def test_output(runs, pattern, position, name, tol, intrinsic=True):
+  vals = []
+  for run in runs:
+    with open(run + "/run0.out", 'r') as f:
+      f.seek(0)
+      val = None
+      for line in f:
+        if pattern in line:
+          toks = line.split()
+          if len(toks) <= position:
+            continue
+          tmp = toks[position]
+          if tmp[-1] == ':':
+            tmp = tmp[0:-1]
+          try: 
+            val = float(tmp)
+          except ValueError:
+            val = 0
+    vals.append(val)
+  compare_vals(vals, name, tol, intrinsic)
+  return vals
 
 def diff_eigenvalues(out_name, ref_name, efo = 0., efr = 0., nb = -1):
   ovals = numpy.loadtxt(out_name)
@@ -147,8 +140,9 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1):
     runs.insert(1, 'ref')
  
   # Loop over the runs, running each and recording time 
-  print("run:\t"+"\t".join(runs))
-  print("time:\t", end=""); stdout.flush()
+  fmt = "{:13s}  "+"{:6s}  "*len(runs)
+  print(fmt.format("runs:", *runs))
+  print("{:13s}  ".format("time:"), end=""); stdout.flush()
   for run in runs:
     if run == 'old':
       with open('./old/time', 'r') as f:
@@ -165,19 +159,19 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1):
 
   # This is the old test/ref comparison.  will be replaced
   print("------------------------------------------------------")    
-  with open('./test/run0.out') as test:
-   with open('./ref/run0.out') as ref:
-     test_output("!    total energy", 4, "Total Energy", test, ref, 0.01)
-     (efo, efr) = test_output("the Fermi energy", 4, "Fermi Energy", test, ref, 0.01)
-     test_output("convergence has been achieved in", 5, "N Iter", test, ref, 1)
-     test_output("Total force", 3, "Total Force", test, ref, 0.01)
-     test_output("total   stress", 5, "Total Stress", test, ref, 1.)
-     test_output("temperature", 2, "Temperature", test, ref, 0.01)
-  compare_bands = exists('./ref/bands.dat')
+#  with open('./test/run0.out') as test:
+#   with open('./ref/run0.out') as ref:
+  test_output(runs, "!    total energy", 4, "Total Energy", 0.01)
+  test_output(runs, "the Fermi energy", 4, "Fermi Energy", 0.01)
+  test_output(runs, "convergence has been achieved in", 5, "N Iter", 1)
+  test_output(runs, "Total force", 3, "Total Force", 0.01)
+  test_output(runs, "total   stress", 5, "Total Stress", 1.)
+  test_output(runs, "temperature", 2, "Temperature", 0.01)
+#  compare_bands = exists('./ref/bands.dat')
 
-  if compare_bands:
-    chi_o = diff_eigenvalues('./test/bands.dat', './ref/bands.dat', efo, efr, nb)
-    compare_vals('RMS Error', chi_o, 0.000, 0.005)
+#  if compare_bands:
+#    chi_o = diff_eigenvalues('./test/bands.dat', './ref/bands.dat', efo, efr, nb)
+#    compare_vals('RMS Error', chi_o, 0.000, 0.005)
 
   chdir(cwd)
   return 1
