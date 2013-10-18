@@ -2,7 +2,7 @@
 
 from sys import argv, exit
 from os import system, chdir, mkdir, getcwd
-from os.path import exists
+import os.path 
 from shutil import copytree, copy2, rmtree
 import time
 from optparse import OptionParser
@@ -96,13 +96,13 @@ def write_cards(cards, f):
 
 run_count = 0
 
-def run_pwscf(line, namelists, cards, testdir = '.', prefix = 'run', np = 1):
+def run_pwscf(line, namelists, cards, testdir = '.', prefix = 'run', np = 1, bindir = '.'):
   global run_count
   toks = line.split()
   if len(toks) == 2:
-    exe = toks[1]
+    exe = os.path.join(bindir, toks[1]+'.x')
   else:
-    exe = 'pw'
+    exe = os.path.join(bindir, 'pw.x')
 
   if testdir != '.':
     cwd = getcwd()
@@ -113,7 +113,7 @@ def run_pwscf(line, namelists, cards, testdir = '.', prefix = 'run', np = 1):
     write_namelists(namelists, fout)
     write_cards(cards, fout)
  
-  system('mpirun -np ' + str(np) + ' ./' + exe + '.x < tmp.in 2> '+ prefix + str(run_count) + '.err |tee '+prefix+ str(run_count) + '.out') 
+  system('mpirun -np ' + str(np) + ' ' + exe + ' < tmp.in 2> '+ prefix + str(run_count) + '.err |tee '+prefix+ str(run_count) + '.out') 
   run_count = run_count + 1
 
   if testdir != '.':
@@ -175,7 +175,7 @@ def cbands(line):
 
 # read cmdline args
 parser = OptionParser()
-parser.add_option("-e", "--executable", dest="exe", default=None,
+parser.add_option("-e", "--executable", dest="bindir", default='.',
                   help="Executable directory to be tested")
 parser.add_option("-r", "--reference", dest="exe2", default=None,
                   help="Reference executables for comparison testing")
@@ -198,7 +198,7 @@ for line in lines:
   if len(toks) == 0 or toks[0][0] != '@': 
     continue
   if toks[0] == '@run':
-    run_pwscf(line, namelists, cards, prefix=opts.prefix, np = opts.np)
+    run_pwscf(line, namelists, cards, prefix=opts.prefix, np = opts.np, bindir = opts.bindir)
   elif toks[0] == '@bands':
     make_bands(line)
   elif toks[0] == '@cmd':

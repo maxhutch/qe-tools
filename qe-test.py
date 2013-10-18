@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
 from sys import argv, exit
+from sys import stdout
 from os import system, chdir, mkdir, getcwd
+from os import walk
 from os.path import exists
 from shutil import move, copytree, copy2, rmtree
 import time
@@ -123,34 +125,64 @@ def get_tag(f, pattern, pos):
 def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1):
   # setup step
   print("------------------------------------------------------")    
-  # Do we need to do a reference run?
-  rerun = not exists(inputs + '/ref') or force
-  if not rerun:
-    system('diff -w ' + inputs + '/ref/*.ref.in ' + inputs + '/*.ref.in > tmp')
-    with open('./tmp', 'r') as f:
-      if len(f.readlines()) != 0:
-        rerun = True
-      else: 
-        print('Using saved result')
-    system('rm tmp')
 
+  # Copy test into internal directory
   rmtree(testdir, ignore_errors = True)
   copytree(inputs, testdir)
   mkdir(testdir + '/bin')
-  copy2(exe + '/pw.x', testdir)
-  copy2(exe + '/pp.x', testdir)
-  copy2(exe + '/plotrho.x', testdir)
-#  copy2(exe + '../scripts/run.py', testdir)
+  copy2(exe + '/pw.x', testdir+'/bin')
   cwd = getcwd()
   chdir(testdir)
 
-  print(' NP = ' + str(np))
+#  print(' NP = ' + str(np))
 
-  start = time.time()
-  system('qe-run.py ' + inputs + '.test.in -n ' + str(np) + ' > /dev/null')
-  time_test = time.time() - start
+  # Setup list of runs
+  runs = next(walk('.'))[1];  
+  runs = [x for x in runs if x != 'pseudo' and x != 'bin']
+  # Make a copy of the 'ref' run for comparison
+  if 'ref' in runs:
+    runs.remove('ref')
+    copytree('./ref', './old')
+    runs.insert(0, 'old')
+    runs.insert(1, 'ref')
+ 
+  # Loop over the runs, running each and recording time 
+  print("run:\t"+"\t".join(runs))
+  print("time:\t", end=""); stdout.flush()
+  for run in runs:
+    if run == 'old':
+      with open('./old/time', 'r') as f:
+        print("%5.2f\t" % float(f.readline()), end=""); stdout.flush()
+      continue
+    chdir(run)
+    start = time.time()  
+    system('qe-run.py ' + inputs + '.'+run+'.in -n ' + str(np) + ' -e ../bin/ > /dev/null')
+    time_test = time.time() - start
+    system('echo "'+str(time_test)+'" > time')
+    print("%5.2f\t" % time_test , end=""); stdout.flush()
+    chdir('..')
+  print("")
 
-  compare_bands = exists('./bands.dat')
+  # This is the old test/ref comparison.  will be replaced
+  print("------------------------------------------------------")    
+  with open('./test/run0.out') as test:
+   with open('./ref/run0.out') as ref:
+     test_output("!    total energy", 4, "Total Energy", test, ref, 0.01)
+     (efo, efr) = test_output("the Fermi energy", 4, "Fermi Energy", test, ref, 0.01)
+     test_output("convergence has been achieved in", 5, "N Iter", test, ref, 1)
+     test_output("Total force", 3, "Total Force", test, ref, 0.01)
+     test_output("total   stress", 5, "Total Stress", test, ref, 1.)
+     test_output("temperature", 2, "Temperature", test, ref, 0.01)
+  compare_bands = exists('./ref/bands.dat')
+
+  if compare_bands:
+    chi_o = diff_eigenvalues('./test/bands.dat', './ref/bands.dat', efo, efr, nb)
+    compare_vals('RMS Error', chi_o, 0.000, 0.005)
+
+  chdir(cwd)
+  return 1
+
+'''
 
   move('./run0.out', './run0.test.out')
 #  move('./run1.out', './run1.test.out')
@@ -178,24 +210,7 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1):
 #    move('ref/run1.ref.err', './run1.ref.err')
     if compare_bands:
       move('ref/bands.ref.dat', './bands.ref.dat')
-
-  print("------------------------------------------------------")    
-  with open('./run0.test.out') as test:
-   with open('./run0.ref.out') as ref:
-     test_output("!    total energy", 4, "Total Energy", test, ref, 0.01)
-     (efo, efr) = test_output("the Fermi energy", 4, "Fermi Energy", test, ref, 0.01)
-     test_output("convergence has been achieved in", 5, "N Iter", test, ref, 1)
-     test_output("Total force", 3, "Total Force", test, ref, 0.01)
-     test_output("total   stress", 5, "Total Stress", test, ref, 1.)
-     test_output("temperature", 2, "Temperature", test, ref, 0.01)
-
-  if compare_bands:
-    chi_o = diff_eigenvalues('./bands.test.dat', './bands.ref.dat', efo, efr, nb)
-    compare_vals('RMS Error', chi_o, 0.000, 0.005)
-
-  chdir(cwd)
-
-  return 1
+'''
 
 # read cmdline args
 parser = OptionParser()
