@@ -58,19 +58,38 @@ def test_output(runs, pattern, position, name, tol, intrinsic=True):
   compare_vals(vals, name, tol, intrinsic)
   return vals
 
-def diff_eigenvalues(out_name, ref_name, efo = 0., efr = 0., nb = -1):
-  ovals = numpy.loadtxt(out_name)
-  rvals = numpy.loadtxt(ref_name)
+def test_eigvals(runs, fermi_energies, tol, nb = -1):   
+  if not exists('old/bands.dat'):
+    return
+  rvals = numpy.loadtxt('old/bands.dat')
 
-  nk = min(ovals.shape[0], rvals.shape[0]) 
-  if nb < 0:
-    nb = min(ovals.shape[1], rvals.shape[1]) - 4
+  output = ["{:13s}  {:>8s}  ".format("eigvals", " n/a ")]
+  for i in range(1,len(runs)):
+    run = runs[i]
+    if not exists(run + '/bands.dat'):
+      print("no " + run + '/bands.dat')
+      output.append("{:>8s}  ".format(" n/a ")) 
+      continue
+    ovals = numpy.loadtxt(run+'/bands.dat')
 
-  diff = ovals[0:nk, 4:nb+4] - rvals[0:nk, 4:nb+4] - efo + efr
-  chi2 = (diff * diff).sum(axis=1) / nb
-  chit = numpy.sqrt(chi2.sum() / nk)
+    nk = min(ovals.shape[0], rvals.shape[0]) 
+    if nb < 0:
+      nb = min(ovals.shape[1], rvals.shape[1]) - 4
 
-  return chit
+    diff = ovals[0:nk, 4:nb+4] - rvals[0:nk, 4:nb+4]
+    if fermi_energies[0] != None:
+      diff = diff - fermi_energies[i] + fermi_energies[0]
+    chi2 = (diff * diff).sum(axis=1) / nb
+    chit = numpy.sqrt(chi2.sum() / nk)
+
+    if chit < tol:
+      output.append("{:8.3f}  ".format(chit))
+    else:
+      output.append("\033[1m{:8.3f}\033[0m  ".format(chit))
+
+  print("".join(output))
+
+  return output
 
 def sum_energies(nscf_out):
   lines = nscf_out.readlines()
@@ -167,16 +186,13 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
 
   # Compare some fields
   test_output(runs, "!    total energy", 4, "Total Energy", 0.01, intrinsic=False)
-  test_output(runs, "the Fermi energy", 4, "Fermi Energy", 0.001)
+  ef = test_output(runs, "the Fermi energy", 4, "Fermi Energy", 0.01)
   test_output(runs, "convergence has been achieved in", 5, "N Iter", 1)
   test_output(runs, "Total force", 3, "Total Force", 0.01, intrinsic=False)
   test_output(runs, "total   stress", 5, "Total Stress", 1.)
   test_output(runs, "temperature", 2, "Temperature", 0.01)
-#  compare_bands = exists('./ref/bands.dat')
 
-#  if compare_bands:
-#    chi_o = diff_eigenvalues('./test/bands.dat', './ref/bands.dat', efo, efr, nb)
-#    compare_vals('RMS Error', chi_o, 0.000, 0.005)
+  test_eigvals(runs, ef, 0.01, nb)
 
   chdir(cwd)
   return 1
