@@ -11,6 +11,9 @@ from optparse import OptionParser
 import random
 import string 
 import numpy
+import json
+
+print_width = 13
 
 # define test output
 def compare_vals(vals, name, tol = 0.001, intrinsic=True):
@@ -30,9 +33,9 @@ def compare_vals(vals, name, tol = 0.001, intrinsic=True):
       err = val - vals[0]
     output.append(err)
   if intrinsic:
-    fmt = ["{:13s}  {:8.3f}  "]+["{:8.3f}  " if abs(x) <= tol else "\033[1m{:8.3f}\033[0m  " for x in output[1:]]
+    fmt = ["{:13s}  {:13.3f}  "]+["{:13.3f}  " if abs(x) <= tol else "\033[1m{:13.3f}\033[0m  " for x in output[1:]]
   else:
-    fmt = ["{:13s}  {:8.3f}  "]+["{:8.2%}  " if abs(x) <= tol else "\033[1m{:8.2%}\033[0m  " for x in output[1:]]
+    fmt = ["{:13s}  {:13.3f}  "]+["{:13.2%}  " if abs(x) <= tol else "\033[1m{:13.2%}\033[0m  " for x in output[1:]]
   print("".join(fmt).format(name,*output))
 
 # define a value tester
@@ -63,12 +66,12 @@ def test_eigvals(runs, fermi_energies, tol, nb = -1):
     return
   rvals = numpy.loadtxt('old/bands.dat')
 
-  output = ["{:13s}  {:>8s}  ".format("eigvals", " n/a ")]
+  output = ["{:13s}  {:>13s}  ".format("eigvals", " n/a ")]
   for i in range(1,len(runs)):
     run = runs[i]
     if not exists(run + '/bands.dat'):
       print("no " + run + '/bands.dat')
-      output.append("{:>8s}  ".format(" n/a ")) 
+      output.append("{:>13s}  ".format(" n/a ")) 
       continue
     ovals = numpy.loadtxt(run+'/bands.dat')
 
@@ -83,9 +86,9 @@ def test_eigvals(runs, fermi_energies, tol, nb = -1):
     chit = numpy.sqrt(chi2.sum() / nk)
 
     if chit < tol:
-      output.append("{:8.3f}  ".format(chit))
+      output.append("{:13.3f}  ".format(chit))
     else:
-      output.append("\033[1m{:8.3f}\033[0m  ".format(chit))
+      output.append("\033[1m{:13.3f}\033[0m  ".format(chit))
 
   print("".join(output))
 
@@ -151,6 +154,7 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
 
   # Setup list of runs
   runs = next(walk('.'))[1];  
+  runs.sort();
   runs = [x for x in runs if x != 'pseudo' and x != 'bin']
   # Make a copy of the 'ref' run for comparison
   if 'ref' in runs:
@@ -166,33 +170,48 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
     runs = [x for x in runs if x in do_runs]
  
   # Loop over the runs, running each and recording time 
-  fmt = "{:13s}  "+"{:>8s}  "*len(runs)
+  fmt = "{:13s}  "+"{:>13s}  "*len(runs)
   print(fmt.format("runs", *runs))
   print("------------------------------------------------------")    
   print("{:13s}  ".format("time (s)"), end=""); stdout.flush()
   for run in runs:
     if run == 'old':
       with open('./old/time', 'r') as f:
-        print("%8.1f  " % float(f.readline()), end=""); stdout.flush()
+        print("%13.1f  " % float(f.readline()), end=""); stdout.flush()
       continue
     chdir(run)
     start = time.time()  
     system('qe-run.py ' + inputs + '.'+run+'.in -n ' + str(np) + ' -e ../bin/ > /dev/null')
     time_test = time.time() - start
     system('echo "'+str(time_test)+'" > time')
-    print("%8.1f  " % time_test , end=""); stdout.flush()
+    print("%13.1f  " % time_test , end=""); stdout.flush()
     chdir('..')
   print("")
 
+  # set tolerances etc.
+  loaded_config = {}
+  if exists('./config'):
+    with open('./config', 'r') as f:
+      loaded_config = json.load(f)
+  default_config = {
+                    "nb":     nb,
+                    "etot":   0.01,
+                    "efermi": 0.01,
+                    "force":  0.01,
+                    "stress": 1.,
+                    "bands":  0.01
+                   } 
+  config = dict(list(default_config.items()) + list(loaded_config.items()))
+
   # Compare some fields
-  test_output(runs, "!    total energy", 4, "Total Energy", 0.01, intrinsic=False)
-  ef = test_output(runs, "the Fermi energy", 4, "Fermi Energy", 0.01)
+  test_output(runs, "!    total energy", 4, "Total Energy", config['etot'], intrinsic=False)
+  ef = test_output(runs, "the Fermi energy", 4, "Fermi Energy", config['efermi'])
   test_output(runs, "convergence has been achieved in", 5, "N Iter", 1)
-  test_output(runs, "Total force", 3, "Total Force", 0.01, intrinsic=False)
-  test_output(runs, "total   stress", 5, "Total Stress", 1.)
+  test_output(runs, "Total force", 3, "Total Force", config['force'], intrinsic=False)
+  test_output(runs, "total   stress", 5, "Total Stress", config['stress'])
   test_output(runs, "temperature", 2, "Temperature", 0.01)
 
-  test_eigvals(runs, ef, 0.01, nb)
+  test_eigvals(runs, ef, config["bands"], config["nb"])
 
   chdir(cwd)
   return 1
