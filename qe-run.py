@@ -83,7 +83,7 @@ def parse_line(line, namelists, cards, active_nl, active_card):
   return
 
 def write_namelists(namelists, f):
-  order = ['control', 'system', 'electrons', 'ions', 'cell', 'shirley']
+  order = ['control', 'system', 'electrons', 'ions', 'cell', 'srb', 'shirley']
   for name in order:
     if name in namelists:
       namelists[name].write(f)
