@@ -10,7 +10,7 @@ There are two types of tools so far:
 List of tools
 -------------
 
-### [run.py](run.py)
+### [qe-run.py](qe-run.py)
 
 This script parses and runs a special input file.  It reads the file sequentially,
 adding or overwriting namelist options and keeping only the most recently read
@@ -24,14 +24,11 @@ This script takes a reference and test band-structure file, and optionally band
 ranges and Fermi energies, computes the RMS error between the band-structures
 and plots with gnuplot.
 
-### [test.py](test.py)
+### [qe-test.py](qe-test.py)
 
-This script runs validation tests.  If the test is named NAME, it expects
-a directory NAME containing NAME.ref.in and NAME.test.in files, which it 
-will run and compare on the basis of energy, Fermi energy, force, stress,
-and RMS band-stucture error (all if applicable).  The input files are of the
-same format as compare\_bands.py.  There can optionally be a directory ref
-in the same directory as the inputs which contains a previous reference output.
-If the ref directory is present, its contents are reused instead of re-running
-the reference.
+This script runs validation tests. If the test is named TEST, it expects
+runs TEST/RUN with a qe-run input file TEST.RUN.in.  A special run is called
+'ref' and should also contain the outputs of qe-run from a trusted build.
+The runs are executed and outputs compared to the 'ref' run.  The 'ref' run
+is also re-executed to validate the build.
 
