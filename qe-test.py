@@ -15,6 +15,8 @@ import json
 
 print_width = 13
 
+print_width = 13
+
 # define test output
 def compare_vals(vals, name, tol = 0.001, intrinsic=True):
   output = []
@@ -33,9 +35,11 @@ def compare_vals(vals, name, tol = 0.001, intrinsic=True):
       err = val - vals[0]
     output.append(err)
   if intrinsic:
-    fmt = ["{:13s}  {:13.3f}  "]+["{:13.3f}  " if abs(x) <= tol else "\033[1m{:13.3f}\033[0m  " for x in output[1:]]
+    fmt = ["{:13s}  {:13.7f}  "]+["{:13.7f}  " if True else "\033[1m{:13.7f}\033[0m  " for x in output[1:]]
+#    fmt = ["{:13s}  {:13.7f}  "]+["{:13.7f}  " if abs(x) <= tol else "\033[1m{:13.7f}\033[0m  " for x in output[1:]]
   else:
-    fmt = ["{:13s}  {:13.3f}  "]+["{:13.2%}  " if abs(x) <= tol else "\033[1m{:13.2%}\033[0m  " for x in output[1:]]
+    fmt = ["{:13s}  {:13.7f}  "]+["{:13.6%}  " if True else "\033[1m{:13.6%}\033[0m  " for x in output[1:]]
+#    fmt = ["{:13s}  {:13.7f}  "]+["{:13.6%}  " if abs(x) <= tol else "\033[1m{:13.6%}\033[0m  " for x in output[1:]]
   print("".join(fmt).format(name,*output))
 
 # define a value tester
@@ -86,9 +90,9 @@ def test_eigvals(runs, fermi_energies, tol, nb = -1):
     chit = numpy.sqrt(chi2.sum() / nk)
 
     if chit < tol:
-      output.append("{:13.3f}  ".format(chit))
+      output.append("{:13.3e}  ".format(chit))
     else:
-      output.append("\033[1m{:13.3f}\033[0m  ".format(chit))
+      output.append("\033[1m{:13.3e}\033[0m  ".format(chit))
 
   print("".join(output))
 
@@ -195,7 +199,7 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
       loaded_config = json.load(f)
   default_config = {
                     "nb":     nb,
-                    "etot":   0.01,
+                    "etot":   7.34e-5,
                     "efermi": 0.01,
                     "force":  0.01,
                     "stress": 1.,
@@ -204,7 +208,7 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
   config = dict(list(default_config.items()) + list(loaded_config.items()))
 
   # Compare some fields
-  test_output(runs, "!    total energy", 4, "Total Energy", config['etot'], intrinsic=False)
+  test_output(runs, "!    total energy", 4, "Total Energy", config['etot'], intrinsic=True)
   ef = test_output(runs, "the Fermi energy", 4, "Fermi Energy", config['efermi'])
   test_output(runs, "convergence has been achieved in", 5, "N Iter", 1)
   test_output(runs, "Total force", 3, "Total Force", config['force'], intrinsic=False)
