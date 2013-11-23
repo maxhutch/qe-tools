@@ -43,24 +43,29 @@ def compare_vals(vals, name, tol = 0.001, intrinsic=True):
   print("".join(fmt).format(name,*output))
 
 # define a value tester
-def test_output(runs, pattern, position, name, tol, intrinsic=True):
+def test_output(runs, pattern, name, tol, intrinsic=True):
   vals = []
   for run in runs:
-    with open(run + "/run0.out", 'r') as f:
-      f.seek(0)
-      val = None
-      for line in f:
-        if pattern in line:
-          toks = line.split()
-          if len(toks) <= position:
-            continue
-          tmp = toks[position]
-          if tmp[-1] == ':':
-            tmp = tmp[0:-1]
-          try: 
-            val = float(tmp)
-          except ValueError:
-            val = 0
+    val = None
+    for out_name in pattern.keys():
+      if exists(run+"/"+out_name):
+        pat = pattern[out_name][0]
+        position = pattern[out_name][1]
+        with open(run + "/"+out_name) as f:
+          f.seek(0)
+          for line in f:
+            if pat in line:
+              toks = line.split()
+              if len(toks) <= position:
+                continue
+              tmp = toks[position]
+              if tmp[-1] == ':':
+                tmp = tmp[0:-1]
+              try: 
+                val = float(tmp)
+              except ValueError:
+                val = 0
+        break
     vals.append(val)
   compare_vals(vals, name, tol, intrinsic)
   return vals
@@ -185,7 +190,10 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
       continue
     chdir(run)
     start = time.time()  
-    system('qe-run.py ' + inputs + '.'+run+'.in -n ' + str(np) + ' -e ../bin/ > /dev/null')
+    if exists('./INCAR'):
+      system('vasp-run.py -n ' + str(np) + ' -e ../bin/ > /dev/null')
+    else:
+      system('qe-run.py ' + inputs + '.'+run+'.in -n ' + str(np) + ' -e ../bin/ > /dev/null')
     time_test = time.time() - start
     system('echo "'+str(time_test)+'" > time')
     print("%13.1f  " % time_test , end=""); stdout.flush()
@@ -206,19 +214,21 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
                     "bands":  0.01
                    } 
   config = dict(list(default_config.items()) + list(loaded_config.items()))
-
+  total_energy = {"OUTCAR": ["free  energy   TOTEN", 4], "run0.out": ["!    total energy", 4]}
+  pressure =     {"OUTCAR": ["external pressure", 3], "run0.out": ["total   stress", 5]} 
   # Compare some fields
-  test_output(runs, "!    total energy", 4, "Total Energy", config['etot'], intrinsic=True)
+  test_output(runs, total_energy, "Total Energy", config['etot'], intrinsic=True)
+  test_output(runs, pressure, "Pressure", config['stress'])
+  chdir(cwd)
+  return 1
+'''
   ef = test_output(runs, "the Fermi energy", 4, "Fermi Energy", config['efermi'])
   test_output(runs, "convergence has been achieved in", 5, "N Iter", 1)
   test_output(runs, "Total force", 3, "Total Force", config['force'], intrinsic=False)
-  test_output(runs, "total   stress", 5, "Total Stress", config['stress'])
   test_output(runs, "temperature", 2, "Temperature", 0.01)
 
   test_eigvals(runs, ef, config["bands"], config["nb"])
-
-  chdir(cwd)
-  return 1
+'''
 
 '''
 
