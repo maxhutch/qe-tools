@@ -1,8 +1,10 @@
 import numpy as np
 
 class PwOut(object):
-  def __init__(self):
-    self.forces = []
+  def __init__(self, fname = None):
+    self.forces = np.zeros((0,3))
+    if fname != None:
+      self.load(fname)
 
   def load(self,fname):
     with open(fname, 'r') as f:
@@ -17,7 +19,7 @@ class PwOut(object):
       toks = lines[force_line].split()
       if len(toks) != 9:
         break
-      self.forces.append((float(toks[6]), float(toks[7]), float(toks[8])))
+      self.forces = np.append(self.forces, [[float(toks[6]), float(toks[7]), float(toks[8])]], axis=0)
       force_line = force_line + 1
-    return force_line
+    return 0
 
