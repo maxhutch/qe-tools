@@ -59,7 +59,7 @@ def test_output(runs, pattern, name, tol, intrinsic=True):
               if len(toks) <= position:
                 continue
               tmp = toks[position]
-              if tmp[-1] == ':':
+              if tmp[-1] == ':' or tmp[-1] == "," or tmp[-1] == ")":
                 tmp = tmp[0:-1]
               try: 
                 val = float(tmp)
@@ -68,6 +68,34 @@ def test_output(runs, pattern, name, tol, intrinsic=True):
         break
     vals.append(val)
   compare_vals(vals, name, tol, intrinsic)
+  return vals
+
+def disp_output(runs, pattern, name):
+  vals = []
+  for run in runs:
+    val = None
+    for out_name in pattern.keys():
+      if exists(run+"/"+out_name):
+        pat = pattern[out_name][0]
+        position = pattern[out_name][1]
+        with open(run + "/"+out_name) as f:
+          f.seek(0)
+          for line in f:
+            if pat in line:
+              toks = line.split()
+              if len(toks) <= position:
+                continue
+              tmp = toks[position]
+              if tmp[-1] == ':' or tmp[-1] == "," or tmp[-1] == ")":
+                tmp = tmp[0:-1]
+              try: 
+                val = float(tmp)
+              except ValueError:
+                val = 0
+        break
+    vals.append(val)
+  fmt = ["{:13s}  {:13.7f}  "]+["{:13.7f}  " for x in vals[1:]]
+  print("".join(fmt).format(name,*vals))
   return vals
 
 def test_eigvals(runs, fermi_energies, tol, nb = -1):   
@@ -215,10 +243,23 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
                    } 
   config = dict(list(default_config.items()) + list(loaded_config.items()))
   total_energy = {"OUTCAR": ["free  energy   TOTEN", 4], "run0.out": ["!    total energy", 4]}
+  fermi_energy = {"run0.out": ["the Fermi energy", 4]}
+  vasp_energy = {"OUTCAR": ["the Fermi energy", 4]}
   pressure =     {"OUTCAR": ["external pressure", 3], "run0.out": ["total   stress", 5]} 
+
+  gvecs = {"run0.out": ["Kohn-Sham Wavefunctions", 5]}
+  ecut = {"run0.out": ["kinetic-energy cutoff", 3]}
+
   # Compare some fields
   test_output(runs, total_energy, "Total Energy", config['etot'], intrinsic=True)
+  test_output(runs, fermi_energy, "Fermi Energy", config['efermi'], intrinsic=True)
+  test_output(runs, vasp_energy, "VASP Energy", config['efermi'], intrinsic=True)
   test_output(runs, pressure, "Pressure", config['stress'])
+
+  print("------------------------------------------------------")    
+  disp_output(runs, ecut, "Energy Cutoff")
+  disp_output(runs, gvecs, "# Gvectors")
+
   chdir(cwd)
   return 1
 '''
