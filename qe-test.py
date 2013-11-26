@@ -18,32 +18,39 @@ print_width = 13
 print_width = 13
 
 # define test output
-def compare_vals(vals, name, tol = 0.001, intrinsic=True):
+def compare_vals(vals, name, tol = 0.001, typ = 'display'):
   output = []
   if vals[0] == None:
     return
   output.append(vals[0])
   for val in vals[1:]:
-    if not intrinsic:
+    if typ == 'intrinsic':
+      err = val - vals[0]
+    elif typ == 'extrinsic':
       if (vals[0] == 0 and val == 0):
         err = 0.
       elif vals[0] == 0:
         err = 1000000000.
       else:
         err = abs((val - vals[0])/vals[0])
-    else:
-      err = val - vals[0]
+    elif typ == 'display':
+      err = val
+    elif typ == 'ratio':
+      err = vals[0] / val
     output.append(err)
-  if intrinsic:
+
+  if typ == 'intrinsic' or typ == 'display':
     fmt = ["{:13s}  {:13.7f}  "]+["{:13.7f}  " if True else "\033[1m{:13.7f}\033[0m  " for x in output[1:]]
 #    fmt = ["{:13s}  {:13.7f}  "]+["{:13.7f}  " if abs(x) <= tol else "\033[1m{:13.7f}\033[0m  " for x in output[1:]]
-  else:
+  elif typ == 'extrinsic' or typ == 'ratio':
     fmt = ["{:13s}  {:13.7f}  "]+["{:13.6%}  " if True else "\033[1m{:13.6%}\033[0m  " for x in output[1:]]
 #    fmt = ["{:13s}  {:13.7f}  "]+["{:13.6%}  " if abs(x) <= tol else "\033[1m{:13.6%}\033[0m  " for x in output[1:]]
+  else:
+    print("Compare type "+typ+" not recognized")
   print("".join(fmt).format(name,*output))
 
 # define a value tester
-def test_output(runs, pattern, name, tol, intrinsic=True):
+def disp_output(runs, pattern, name, typ = 'display', tol = 1):
   vals = []
   for run in runs:
     val = None
@@ -59,7 +66,10 @@ def test_output(runs, pattern, name, tol, intrinsic=True):
               if len(toks) <= position:
                 continue
               tmp = toks[position]
-              if tmp[-1] == ':' or tmp[-1] == "," or tmp[-1] == ")":
+              if (tmp[-1] == ':' or 
+                  tmp[-1] == "," or 
+                  tmp[-1] == ")" or 
+                  tmp[-1] == 's' ):
                 tmp = tmp[0:-1]
               try: 
                 val = float(tmp)
@@ -67,35 +77,7 @@ def test_output(runs, pattern, name, tol, intrinsic=True):
                 val = 0
         break
     vals.append(val)
-  compare_vals(vals, name, tol, intrinsic)
-  return vals
-
-def disp_output(runs, pattern, name):
-  vals = []
-  for run in runs:
-    val = None
-    for out_name in pattern.keys():
-      if exists(run+"/"+out_name):
-        pat = pattern[out_name][0]
-        position = pattern[out_name][1]
-        with open(run + "/"+out_name) as f:
-          f.seek(0)
-          for line in f:
-            if pat in line:
-              toks = line.split()
-              if len(toks) <= position:
-                continue
-              tmp = toks[position]
-              if tmp[-1] == ':' or tmp[-1] == "," or tmp[-1] == ")":
-                tmp = tmp[0:-1]
-              try: 
-                val = float(tmp)
-              except ValueError:
-                val = 0
-        break
-    vals.append(val)
-  fmt = ["{:13s}  {:13.7f}  "]+["{:13.7f}  " for x in vals[1:]]
-  print("".join(fmt).format(name,*vals))
+  compare_vals(vals, name, tol, typ)
   return vals
 
 def test_eigvals(runs, fermi_energies, tol, nb = -1):   
@@ -143,39 +125,6 @@ def sum_energies(nscf_out):
         for k in range(len(toks)):
           tot = tot + float(toks[k])
   return tot
-
-'''
-# define a comparator
-def compare_output(pattern, position, name, out, ref):
-  out.seek(0)
-  val_o = 0.
-  for line in out:
-    if pattern in line:
-      toks = line.split()
-      tmp = toks[position]
-      if tmp[-1] == ':':
-        tmp = tmp[0:-1]
-      val_o = val_o + float(tmp)
-  ref.seek(0)
-  val_r = 0.
-  for line in ref:
-    if pattern in line:
-      toks = line.split()
-      tmp = toks[position]
-      if tmp[-1] == ':':
-        tmp = tmp[0:-1]
-      val_r = val_r + float(tmp)
-  print("%5.2fx  %-15s % 13.4f vs % 13.4f" % ((val_r+.0000001)/(val_o+.0000001), name, val_o, val_r))
-
-def get_tag(f, pattern, pos):
-  f.seek(0)
-  for line in f:
-    if pattern in line:
-      toks = line.split()
-      ans = toks[pos]
-      return ans
-'''
-
 
 def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, run_mask = None):
   # setup step
@@ -251,22 +200,25 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
   ecut = {"run0.out": ["kinetic-energy cutoff", 3]}
 
   # Compare some fields
-  test_output(runs, total_energy, "Total Energy", config['etot'], intrinsic=True)
-  test_output(runs, fermi_energy, "Fermi Energy", config['efermi'], intrinsic=True)
-  test_output(runs, vasp_energy, "VASP Energy", config['efermi'], intrinsic=True)
-  test_output(runs, pressure, "Pressure", config['stress'])
+  disp_output(runs, total_energy, "Total Energy", 'intrinsic', config['etot'])
+  disp_output(runs, fermi_energy, "Fermi Energy", 'extrinsic', config['efermi'])
+  disp_output(runs, vasp_energy, "VASP Energy", 'intrinsic', config['efermi'])
+  disp_output(runs, pressure, "Pressure", 'extrinsic', config['stress'])
 
   print("------------------------------------------------------")    
   disp_output(runs, ecut, "Energy Cutoff")
   disp_output(runs, gvecs, "# Gvectors")
 
+  print("------------------------------------------------------")    
+  scftime = {"run0.out": ["PWSCF        :", 4]}
+  disp_output(runs, scftime, "SCF Time", 'ratio')
   chdir(cwd)
   return 1
 '''
-  ef = test_output(runs, "the Fermi energy", 4, "Fermi Energy", config['efermi'])
-  test_output(runs, "convergence has been achieved in", 5, "N Iter", 1)
-  test_output(runs, "Total force", 3, "Total Force", config['force'], intrinsic=False)
-  test_output(runs, "temperature", 2, "Temperature", 0.01)
+  ef = disp_output(runs, "the Fermi energy", 4, "Fermi Energy", config['efermi'])
+  disp_output(runs, "convergence has been achieved in", 5, "N Iter", 1)
+  disp_output(runs, "Total force", 3, "Total Force", config['force'], intrinsic=False)
+  disp_output(runs, "temperature", 2, "Temperature", 0.01)
 
   test_eigvals(runs, ef, config["bands"], config["nb"])
 '''
