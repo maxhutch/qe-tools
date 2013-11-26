@@ -36,7 +36,7 @@ def compare_vals(vals, name, tol = 0.001, typ = 'display'):
     elif typ == 'display':
       err = val
     elif typ == 'ratio':
-      err = vals[0] / val
+      err = val / vals[0]
     output.append(err)
 
   if typ == 'intrinsic' or typ == 'display':
@@ -211,7 +211,13 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
 
   print("------------------------------------------------------")    
   scftime = {"run0.out": ["PWSCF        :", 4]}
-  disp_output(runs, scftime, "SCF Time", 'ratio')
+  electron_time = {"run0.out": ["electrons    :", 2]}
+  forces_time = {"run0.out": ["forces       :", 2]}
+  stresses_time = {"run0.out": ["stress       :", 2]}
+#  disp_output(runs, scftime, "SCF Time", 'ratio')
+  disp_output(runs, electron_time, "SCF Time", 'ratio')
+  disp_output(runs, forces_time, "Force Time", 'ratio')
+  disp_output(runs, stresses_time, "Stress Time", 'ratio')
   chdir(cwd)
   return 1
 '''
