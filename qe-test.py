@@ -36,7 +36,10 @@ def compare_vals(vals, name, tol = 0.001, typ = 'display'):
     elif typ == 'display':
       err = val
     elif typ == 'ratio':
-      err = val / vals[0]
+      if (vals[0] == 0 and val == 0):
+        err = 1.
+      else:
+        err = val / vals[0]
     output.append(err)
 
   if typ == 'intrinsic' or typ == 'display':
@@ -134,7 +137,10 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
   rmtree(testdir, ignore_errors = True)
   copytree(inputs, testdir)
   mkdir(testdir + '/bin')
-  copy2(exe + '/pw.x', testdir+'/bin')
+  if exists(exe + '/vasp'):
+    copy2(exe + '/vasp', testdir+'/bin')
+  if exists(exe + '/pw.x'):
+    copy2(exe + '/pw.x', testdir+'/bin')
   cwd = getcwd()
   chdir(testdir)
 
@@ -193,6 +199,7 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
   config = dict(list(default_config.items()) + list(loaded_config.items()))
   total_energy = {"OUTCAR": ["free  energy   TOTEN", 4], "run0.out": ["!    total energy", 4]}
   fermi_energy = {"run0.out": ["the Fermi energy", 4]}
+  total_force = {"run0.out":  ["Total force =", 3]}
   vasp_energy = {"OUTCAR": ["the Fermi energy", 4]}
   pressure =     {"OUTCAR": ["external pressure", 3], "run0.out": ["total   stress", 5]} 
 
@@ -203,6 +210,7 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
   disp_output(runs, total_energy, "Total Energy", 'intrinsic', config['etot'])
   disp_output(runs, fermi_energy, "Fermi Energy", 'extrinsic', config['efermi'])
   disp_output(runs, vasp_energy, "VASP Energy", 'intrinsic', config['efermi'])
+  disp_output(runs, total_force, "Total Force", 'extrinsic', config['force'])
   disp_output(runs, pressure, "Pressure", 'extrinsic', config['stress'])
 
   print("------------------------------------------------------")    
@@ -211,11 +219,13 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
 
   print("------------------------------------------------------")    
   scftime = {"run0.out": ["PWSCF        :", 4]}
-  electron_time = {"run0.out": ["electrons    :", 2]}
-  forces_time = {"run0.out": ["forces       :", 2]}
-  stresses_time = {"run0.out": ["stress       :", 2]}
+  scf_time = {"run0.out": ["electrons    :", 4]}
+  nscf_time = {"run1.out": ["electrons    :", 4]}
+  forces_time = {"run0.out": ["forces       :", 4]}
+  stresses_time = {"run0.out": ["stress       :", 4]}
 #  disp_output(runs, scftime, "SCF Time", 'ratio')
-  disp_output(runs, electron_time, "SCF Time", 'ratio')
+  disp_output(runs, scf_time, "SCF Time", 'ratio')
+  disp_output(runs, nscf_time, "NSCF Time", 'ratio')
   disp_output(runs, forces_time, "Force Time", 'ratio')
   disp_output(runs, stresses_time, "Stress Time", 'ratio')
   chdir(cwd)

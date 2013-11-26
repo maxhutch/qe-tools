@@ -27,5 +27,5 @@ parser.add_option("-p", "--prefix", dest="prefix", default="run",
 
 (opts, args) = parser.parse_args()
 
-system("mpirun -np "+ str(opts.np) + " " + bindir + "/vasp 2> "+opts.prefix+".err | tee " + prefix + ".out")
+system("mpirun -np "+ str(opts.np) + " " + opts.bindir + "/vasp 2> "+opts.prefix+".err | tee " + opts.prefix + ".out")
 
