@@ -198,28 +198,25 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
                    } 
   config = dict(list(default_config.items()) + list(loaded_config.items()))
   total_energy = {"OUTCAR": ["free  energy   TOTEN", 4], "run0.out": ["!    total energy", 4]}
-  fermi_energy = {"run0.out": ["the Fermi energy", 4]}
+  fermi_energy = {"OUTCAR": ["E-fermi", 2], "run0.out": ["the Fermi energy", 4]}
   total_force = {"run0.out":  ["Total force =", 3]}
-  vasp_energy = {"OUTCAR": ["the Fermi energy", 4]}
   pressure =     {"OUTCAR": ["external pressure", 3], "run0.out": ["total   stress", 5]} 
-
-  gvecs = {"run0.out": ["Kohn-Sham Wavefunctions", 5]}
-  ecut = {"run0.out": ["kinetic-energy cutoff", 3]}
-
   # Compare some fields
   disp_output(runs, total_energy, "Total Energy", 'intrinsic', config['etot'])
   disp_output(runs, fermi_energy, "Fermi Energy", 'extrinsic', config['efermi'])
-  disp_output(runs, vasp_energy, "VASP Energy", 'intrinsic', config['efermi'])
   disp_output(runs, total_force, "Total Force", 'extrinsic', config['force'])
   disp_output(runs, pressure, "Pressure", 'extrinsic', config['stress'])
 
   print("------------------------------------------------------")    
+
+  gvecs = {"OUTCAR": ["total plane-waves  NPLWV", 4], "run0.out": ["Kohn-Sham Wavefunctions", 5]}
+  ecut = {"run0.out": ["kinetic-energy cutoff", 3]}
+
   disp_output(runs, ecut, "Energy Cutoff")
   disp_output(runs, gvecs, "# Gvectors")
 
   print("------------------------------------------------------")    
-  scftime = {"run0.out": ["PWSCF        :", 4]}
-  scf_time = {"run0.out": ["electrons    :", 4]}
+  scf_time = {"OUTCAR": ["LOOP+:", 3], "run0.out": ["electrons    :", 4]}
   nscf_time = {"run1.out": ["electrons    :", 4]}
   forces_time = {"run0.out": ["forces       :", 4]}
   stresses_time = {"run0.out": ["stress       :", 4]}
