@@ -10,7 +10,7 @@ import time
 from optparse import OptionParser
 import random
 import string 
-import numpy
+#import numpy
 import json
 
 print_width = 13
@@ -82,7 +82,7 @@ def disp_output(runs, pattern, name, typ = 'display', tol = 1):
     vals.append(val)
   compare_vals(vals, name, tol, typ)
   return vals
-
+'''
 def test_eigvals(runs, fermi_energies, tol, nb = -1):   
   if not exists('old/bands.dat'):
     return
@@ -115,7 +115,7 @@ def test_eigvals(runs, fermi_energies, tol, nb = -1):
   print("".join(output))
 
   return output
-
+'''
 def sum_energies(nscf_out):
   lines = nscf_out.readlines()
   tot = 0.
