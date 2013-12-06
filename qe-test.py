@@ -298,6 +298,8 @@ else:
   test_set = []
   with open(opts.test_set) as f:
     for line in f:
+      if line[0] == '!':
+        continue 
       toks = line.split()
       if len(toks) > 0:
         test_set.append(toks[0])
