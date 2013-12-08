@@ -202,10 +202,10 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
   total_force = {"run0.out":  ["Total force =", 3]}
   pressure =     {"OUTCAR": ["external pressure", 3], "run0.out": ["total   stress", 5]} 
   # Compare some fields
-  disp_output(runs, total_energy, "Total Energy", 'intrinsic', config['etot'])
-  disp_output(runs, fermi_energy, "Fermi Energy", 'extrinsic', config['efermi'])
+  disp_output(runs, total_energy, "Total Energy", 'extrinsic', config['etot'])
+  disp_output(runs, fermi_energy, "Fermi Energy", 'intrinsic', config['efermi'])
   disp_output(runs, total_force, "Total Force", 'extrinsic', config['force'])
-  disp_output(runs, pressure, "Pressure", 'extrinsic', config['stress'])
+  disp_output(runs, pressure, "Pressure", 'intrinsic', config['stress'])
 
   print("------------------------------------------------------")    
 
