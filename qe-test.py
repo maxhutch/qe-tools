@@ -278,10 +278,10 @@ parser.add_option("-s", "--set", dest="test_set", default=None,
                   help="File specifying set of tests to run") 
 parser.add_option("-n", "--num_pe", type=int, dest="np", default=1,
                   help="Number of MPI PEs")
-parser.add_option("-f", "--force", action="store_true", dest="force", default=False,
-                  help="Force the reference run to occur")
-parser.add_option("-i", "--ipm", action="store_true", dest="ipm", default=False,
-                  help="Use IPM to analyze runs")
+#parser.add_option("-f", "--force", action="store_true", dest="force", default=False,
+#                  help="Force the reference run to occur")
+#parser.add_option("-i", "--ipm", action="store_true", dest="ipm", default=False,
+#                  help="Use IPM to analyze runs")
 parser.add_option("-b", "--nband", type=int, dest="nb", default=-1,
                   help="How many bands to compare")
 
