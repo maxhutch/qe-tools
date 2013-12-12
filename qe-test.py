@@ -129,7 +129,7 @@ def sum_energies(nscf_out):
           tot = tot + float(toks[k])
   return tot
 
-def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, run_mask = None):
+def run_test(inputs, exe, testdir, np = 1, nb = -1, run_mask = None):
   # setup step
   print("------------------------------------------------------")    
 
@@ -316,7 +316,7 @@ for test in test_set:
 
 
   # run first test
-  time1 = run_test(test, opts.exe, testdir, opts.np, opts.ipm, opts.force, opts.nb, opts.runs)
+  time1 = run_test(test, opts.exe, testdir, opts.np, opts.nb, opts.runs)
 
   print("======================================================")    
 
