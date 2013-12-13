@@ -23,33 +23,42 @@ def compare_vals(vals, name, tol = 0.001, typ = 'display'):
   if vals[0] == None:
     return
   output.append(vals[0])
+  fmt = ["{:13s}  {:13.7f}  "]
   for val in vals[1:]:
+    if val == None:
+      output.append("n/a")
+      fmt.append("{:>13s}  ")
+      continue
     if typ == 'intrinsic':
       err = val - vals[0]
+      fmt.append("{:13.7f}  ")
     elif typ == 'extrinsic':
       if (vals[0] == 0 and val == 0):
         err = 0.
       elif vals[0] == 0:
         err = 1000000000.
       else:
-        err = abs((val - vals[0])/vals[0])
+        err = abs((val - vals[0])/vals[0]) 
+      fmt.append("{:13.6%}  ")
     elif typ == 'display':
       err = val
+      fmt.append("{:13.7f}  ")
     elif typ == 'ratio':
       if (vals[0] == 0 and val == 0):
         err = 1.
       else:
         err = val / vals[0]
+      fmt.append("{:13.6%}  ")
     output.append(err)
 
-  if typ == 'intrinsic' or typ == 'display':
-    fmt = ["{:13s}  {:13.7f}  "]+["{:13.7f}  " if True else "\033[1m{:13.7f}\033[0m  " for x in output[1:]]
+#  if typ == 'intrinsic' or typ == 'display':
+#    fmt = ["{:13s}  {:13.7f}  "]+["{:13.7f}  " if True else "\033[1m{:13.7f}\033[0m  " for x in output[1:]]
 #    fmt = ["{:13s}  {:13.7f}  "]+["{:13.7f}  " if abs(x) <= tol else "\033[1m{:13.7f}\033[0m  " for x in output[1:]]
-  elif typ == 'extrinsic' or typ == 'ratio':
-    fmt = ["{:13s}  {:13.7f}  "]+["{:13.6%}  " if True else "\033[1m{:13.6%}\033[0m  " for x in output[1:]]
+#  elif typ == 'extrinsic' or typ == 'ratio':
+#    fmt = ["{:13s}  {:13.7f}  "]+["{:13.6%}  " if True else "\033[1m{:13.6%}\033[0m  " for x in output[1:]]
 #    fmt = ["{:13s}  {:13.7f}  "]+["{:13.6%}  " if abs(x) <= tol else "\033[1m{:13.6%}\033[0m  " for x in output[1:]]
-  else:
-    print("Compare type "+typ+" not recognized")
+#  else:
+#    print("Compare type "+typ+" not recognized")
   print("".join(fmt).format(name,*output))
 
 # define a value tester
@@ -61,6 +70,10 @@ def disp_output(runs, pattern, name, typ = 'display', tol = 1):
       if exists(run+"/"+out_name):
         pat = pattern[out_name][0]
         position = pattern[out_name][1]
+        if len(pattern[out_name]) == 3:
+          scale = float(pattern[out_name][2])
+        else:
+          scale = 1.
         with open(run + "/"+out_name) as f:
           f.seek(0)
           for line in f:
@@ -75,7 +88,7 @@ def disp_output(runs, pattern, name, typ = 'display', tol = 1):
                   tmp[-1] == 's' ):
                 tmp = tmp[0:-1]
               try: 
-                val = float(tmp)
+                val = scale*float(tmp)
               except ValueError:
                 val = 0
         break
@@ -197,12 +210,12 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
                     "bands":  0.01
                    } 
   config = dict(list(default_config.items()) + list(loaded_config.items()))
-  total_energy = {"OUTCAR": ["free  energy   TOTEN", 4], "run0.out": ["!    total energy", 4]}
+  total_energy = {"OUTCAR": ["free  energy   TOTEN", 4], "run0.out": ["!    total energy", 4, 13.6]}
   fermi_energy = {"OUTCAR": ["E-fermi", 2], "run0.out": ["the Fermi energy", 4]}
   total_force = {"run0.out":  ["Total force =", 3]}
   pressure =     {"OUTCAR": ["external pressure", 3], "run0.out": ["total   stress", 5]} 
   # Compare some fields
-  disp_output(runs, total_energy, "Total Energy", 'extrinsic', config['etot'])
+  disp_output(runs, total_energy, "Total Energy (eV)", 'extrinsic', config['etot'])
   disp_output(runs, fermi_energy, "Fermi Energy", 'intrinsic', config['efermi'])
   disp_output(runs, total_force, "Total Force", 'extrinsic', config['force'])
   disp_output(runs, pressure, "Pressure", 'intrinsic', config['stress'])
@@ -210,10 +223,12 @@ def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, 
   print("------------------------------------------------------")    
 
   gvecs = {"OUTCAR": ["total plane-waves  NPLWV", 4], "run0.out": ["Kohn-Sham Wavefunctions", 5]}
-  ecut = {"run0.out": ["kinetic-energy cutoff", 3]}
+  ecut = {"run0.out": ["kinetic-energy cutoff", 3], "OUTCAR": ["ENCUT  =  ", 4]}
+  electroncs = {"run0.out": ["number of electrons       =", 4], "OUTCAR": ["NELECT =  ", 2]}
 
   disp_output(runs, ecut, "Energy Cutoff")
   disp_output(runs, gvecs, "# Gvectors")
+
 
   print("------------------------------------------------------")    
   scf_time = {"OUTCAR": ["LOOP+:", 3], "run0.out": ["electrons    :", 4]}
