@@ -142,7 +142,7 @@ def sum_energies(nscf_out):
           tot = tot + float(toks[k])
   return tot
 
-def run_test(inputs, exe, testdir, np = 1, ipm = False, force = False, nb = -1, run_mask = None):
+def run_test(inputs, exe, testdir, np = 1, nb = -1, run_mask = None):
   # setup step
   print("------------------------------------------------------")    
 
@@ -293,10 +293,10 @@ parser.add_option("-s", "--set", dest="test_set", default=None,
                   help="File specifying set of tests to run") 
 parser.add_option("-n", "--num_pe", type=int, dest="np", default=1,
                   help="Number of MPI PEs")
-parser.add_option("-f", "--force", action="store_true", dest="force", default=False,
-                  help="Force the reference run to occur")
-parser.add_option("-i", "--ipm", action="store_true", dest="ipm", default=False,
-                  help="Use IPM to analyze runs")
+#parser.add_option("-f", "--force", action="store_true", dest="force", default=False,
+#                  help="Force the reference run to occur")
+#parser.add_option("-i", "--ipm", action="store_true", dest="ipm", default=False,
+#                  help="Use IPM to analyze runs")
 parser.add_option("-b", "--nband", type=int, dest="nb", default=-1,
                   help="How many bands to compare")
 
@@ -331,7 +331,7 @@ for test in test_set:
 
 
   # run first test
-  time1 = run_test(test, opts.exe, testdir, opts.np, opts.ipm, opts.force, opts.nb, opts.runs)
+  time1 = run_test(test, opts.exe, testdir, opts.np, opts.nb, opts.runs)
 
   print("======================================================")    
 
