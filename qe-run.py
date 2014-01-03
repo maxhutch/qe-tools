@@ -8,7 +8,6 @@ import time
 from optparse import OptionParser
 import random
 import string 
-import numpy
 
 class Namelist:
   def __init__(self, name):
