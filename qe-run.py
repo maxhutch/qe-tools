@@ -180,7 +180,7 @@ parser.add_option("-r", "--reference", dest="exe2", default=None,
                   help="Reference executables for comparison testing")
 parser.add_option("--nproc", type=int, dest="nproc", default=1,
                   help="Number of MPI PEs")
-parser.add_option("--npot", type=int, dest="npot", default=1,
+parser.add_option("--npot", type=int, dest="npot", default=-1,
                   help="Number of pots (srb pools)")
 parser.add_option("-p", "--prefix", dest="prefix", default="run",
                   help="Output prefix")
@@ -190,6 +190,9 @@ parser.add_option("-d", "--dir", dest="testdir", default=".",
 
 
 (opts, args) = parser.parse_args()
+
+if opts.npot == -1:
+  opts.npot = opts.nproc
 
 fin = open(argv[1], 'r')
 namelists = {}
