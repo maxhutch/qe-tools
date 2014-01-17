@@ -95,27 +95,27 @@ def write_cards(cards, f):
 
 run_count = 0
 
-def run_pwscf(line, namelists, cards, testdir = '.', prefix = 'run', np = 1, bindir = '.'):
+def run_pwscf(line, namelists, cards, opts):
   global run_count
   toks = line.split()
   if len(toks) == 2:
-    exe = os.path.join(bindir, toks[1]+'.x')
+    exe = os.path.join(opts.bindir, toks[1]+'.x')
   else:
-    exe = os.path.join(bindir, 'pw.x')
+    exe = os.path.join(opts.bindir, 'pw.x')
 
-  if testdir != '.':
+  if opts.testdir != '.':
     cwd = getcwd()
-    copy2('pw.x', testdir)
-    chdir(testdir)
+    copy2('pw.x', opts.testdir)
+    chdir(opts.testdir)
 
   with open('tmp.in', 'w') as fout:
     write_namelists(namelists, fout)
     write_cards(cards, fout)
- 
-  system('mpirun -np ' + str(np) + ' ' + exe + ' < tmp.in 2> '+ prefix + str(run_count) + '.err |tee '+prefix+ str(run_count) + '.out') 
+
+  system('mpirun -np ' + str(opts.nproc) + ' ' + exe + ' -npot ' + str(opts.npot) + ' < tmp.in 2> '+ opts.prefix + str(run_count) + '.err |tee '+opts.prefix+ str(run_count) + '.out') 
   run_count = run_count + 1
 
-  if testdir != '.':
+  if opts.testdir != '.':
     chdir(cwd)
 
   return
@@ -178,10 +178,16 @@ parser.add_option("-e", "--executable", dest="bindir", default='.',
                   help="Executable directory to be tested")
 parser.add_option("-r", "--reference", dest="exe2", default=None,
                   help="Reference executables for comparison testing")
-parser.add_option("-n", "--num_pe", type=int, dest="np", default=1,
+parser.add_option("--nproc", type=int, dest="nproc", default=1,
                   help="Number of MPI PEs")
+parser.add_option("--npot", type=int, dest="npot", default=1,
+                  help="Number of pots (srb pools)")
 parser.add_option("-p", "--prefix", dest="prefix", default="run",
                   help="Output prefix")
+parser.add_option("-d", "--dir", dest="testdir", default=".",
+                  help="Directory containing test")
+
+
 
 (opts, args) = parser.parse_args()
 
@@ -197,7 +203,7 @@ for line in lines:
   if len(toks) == 0 or toks[0][0] != '@': 
     continue
   if toks[0] == '@run':
-    run_pwscf(line, namelists, cards, prefix=opts.prefix, np = opts.np, bindir = opts.bindir)
+    run_pwscf(line, namelists, cards, opts)
   elif toks[0] == '@bands':
     make_bands(line)
   elif toks[0] == '@cmd':

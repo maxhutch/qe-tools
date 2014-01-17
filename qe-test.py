@@ -140,7 +140,7 @@ def sum_energies(nscf_out):
           tot = tot + float(toks[k])
   return tot
 
-def run_test(inputs, exe, testdir, np = 1, nb = -1, run_mask = None):
+def run_test(inputs, exe, testdir, opts):
   # setup step
   print("------------------------------------------------------")    
 
@@ -167,8 +167,8 @@ def run_test(inputs, exe, testdir, np = 1, nb = -1, run_mask = None):
     runs.insert(1, 'ref')
 
   # mask the runs
-  if run_mask != None:
-    do_runs = run_mask.split(":")
+  if opts.runs != None:
+    do_runs = opts.runs.split(":")
     do_runs.append("old")
     runs = [x for x in runs if x in do_runs]
  
@@ -185,9 +185,9 @@ def run_test(inputs, exe, testdir, np = 1, nb = -1, run_mask = None):
     chdir(run)
     start = time.time()  
     if exists('./INCAR'):
-      system('vasp-run.py -n ' + str(np) + ' -e ../bin/ > /dev/null')
+      system('vasp-run.py -n ' + str(opts.nproc) + ' -e ../bin/ > /dev/null')
     else:
-      system('qe-run.py ' + inputs + '.'+run+'.in -n ' + str(np) + ' -e ../bin/ > /dev/null')
+      system('qe-run.py ' + inputs + '.'+run+'.in --nproc ' + str(opts.nproc)  + ' --npot ' + str(opts.npot) + ' -e ../bin/ > /dev/null')
     time_test = time.time() - start
     system('echo "'+str(time_test)+'" > time')
     print("%13.1f  " % time_test , end=""); stdout.flush()
@@ -200,7 +200,7 @@ def run_test(inputs, exe, testdir, np = 1, nb = -1, run_mask = None):
     with open('./config', 'r') as f:
       loaded_config = json.load(f)
   default_config = {
-                    "nb":     nb,
+                    "nb":     opts.nb,
                     "etot":   7.34e-5,
                     "efermi": 0.01,
                     "force":  0.01,
@@ -289,8 +289,10 @@ parser.add_option("-t", "--test", dest="test", default=None,
                   help="Directory containing the test")
 parser.add_option("-s", "--set", dest="test_set", default=None,
                   help="File specifying set of tests to run") 
-parser.add_option("-n", "--num_pe", type=int, dest="np", default=1,
+parser.add_option("--nproc", type=int, dest="nproc", default=1,
                   help="Number of MPI PEs")
+parser.add_option("--npot", type=int, dest="npot", default=-1,
+                  help="Number of pots (srb pools)")
 #parser.add_option("-f", "--force", action="store_true", dest="force", default=False,
 #                  help="Force the reference run to occur")
 #parser.add_option("-i", "--ipm", action="store_true", dest="ipm", default=False,
@@ -303,6 +305,9 @@ parser.add_option("-b", "--nband", type=int, dest="nb", default=-1,
 
 if (opts.test == None and opts.test_set == None) or opts.exe == None:
   parser.error("Must specify at least an executable and test system")
+
+if opts.npot == -1:
+  opts.npot = opts.nproc
 
 # Setup test set
 if opts.test_set == None:
@@ -329,7 +334,7 @@ for test in test_set:
 
 
   # run first test
-  time1 = run_test(test, opts.exe, testdir, opts.np, opts.nb, opts.runs)
+  time1 = run_test(test, opts.exe, testdir, opts)
 
   print("======================================================")    
 
