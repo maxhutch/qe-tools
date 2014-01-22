@@ -88,7 +88,7 @@ def write_namelists(namelists, f):
       namelists[name].write(f)
 
 def write_cards(cards, f):
-  order = ['ATOMIC_SPECIES', 'ATOMIC_POSITIONS', 'K_POINTS', 'Q_POINTS']
+  order = ['ATOMIC_SPECIES', 'ATOMIC_POSITIONS', 'CELL_PARAMETERS', 'K_POINTS', 'Q_POINTS']
   for name in order:
     if name in cards:
       cards[name].write(f)
