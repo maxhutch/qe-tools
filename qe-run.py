@@ -112,7 +112,7 @@ def run_pwscf(line, namelists, cards, opts):
     write_namelists(namelists, fout)
     write_cards(cards, fout)
 
-  system('mpirun -np ' + str(opts.nproc) + ' ' + exe + ' -npot ' + str(opts.npot) + ' < tmp.in 2> '+ opts.prefix + str(run_count) + '.err |tee '+opts.prefix+ str(run_count) + '.out') 
+  system('mpirun -np ' + str(opts.nproc) + ' ' + exe + ' -npot ' + str(opts.npot) + ' -npool ' + str(opts.npool) + ' < tmp.in 2> '+ opts.prefix + str(run_count) + '.err |tee '+opts.prefix+ str(run_count) + '.out') 
   run_count = run_count + 1
 
   if opts.testdir != '.':
@@ -180,6 +180,8 @@ parser.add_option("-r", "--reference", dest="exe2", default=None,
                   help="Reference executables for comparison testing")
 parser.add_option("--nproc", type=int, dest="nproc", default=1,
                   help="Number of MPI PEs")
+parser.add_option("--npool", type=int, dest="npool", default=1,
+                  help="Number of pools")
 parser.add_option("--npot", type=int, dest="npot", default=-1,
                   help="Number of pots (srb pools)")
 parser.add_option("-p", "--prefix", dest="prefix", default="run",

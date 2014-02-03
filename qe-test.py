@@ -10,8 +10,9 @@ import time
 from optparse import OptionParser
 import random
 import string 
-#import numpy
+import numpy
 import json
+from math import sqrt
 
 print_width = 13
 
@@ -93,7 +94,7 @@ def disp_output(runs, pattern, name, typ = 'display', tol = 1):
     vals.append(val)
   compare_vals(vals, name, tol, typ)
   return vals
-'''
+
 def test_eigvals(runs, fermi_energies, tol, nb = -1):   
   if not exists('old/bands.dat'):
     return
@@ -126,7 +127,37 @@ def test_eigvals(runs, fermi_energies, tol, nb = -1):
   print("".join(output))
 
   return output
-'''
+
+
+def get_forces(runs):
+  all_forces = []
+  for run in runs:
+    with open(run + "/run0.out") as f:
+      f.seek(0)
+      lines = f.readlines()
+      for i in range(len(lines)):
+        if "Forces acting on atoms" in lines[i]:
+          break
+      i = i + 2
+      forces = []
+      while "atom" in lines[i]:
+        toks = lines[i].split()
+        forces.append(float(toks[6]))
+        forces.append(float(toks[7]))
+        forces.append(float(toks[8]))
+        i = i + 1
+    all_forces.append(forces)
+  return all_forces
+
+def rmse(data):
+  rmses = []
+  for i in range(len(data)):
+    diff = [data[i][j] - data[0][j] for j in range(len(data[0]))]
+    sqdiff = [x*x for x in diff]
+    mean = sum(sqdiff) / len(sqdiff)
+    rmses.append(sqrt(mean))
+  return rmses 
+
 def sum_energies(nscf_out):
   lines = nscf_out.readlines()
   tot = 0.
@@ -187,7 +218,7 @@ def run_test(inputs, exe, testdir, opts):
     if exists('./INCAR'):
       system('vasp-run.py -n ' + str(opts.nproc) + ' -e ../bin/ > /dev/null')
     else:
-      system('qe-run.py ' + inputs + '.'+run+'.in --nproc ' + str(opts.nproc)  + ' --npot ' + str(opts.npot) + ' -e ../bin/ > /dev/null')
+      system('qe-run.py ' + inputs + '.'+run+'.in --nproc ' + str(opts.nproc)  + ' --npot ' + str(opts.npot) + ' --npool ' + str(opts.npool) + ' -e ../bin/ > /dev/null')
     time_test = time.time() - start
     system('echo "'+str(time_test)+'" > time')
     print("%13.1f  " % time_test , end=""); stdout.flush()
@@ -214,18 +245,25 @@ def run_test(inputs, exe, testdir, opts):
   pressure =     {"OUTCAR": ["external pressure", 3], "run0.out": ["total   stress", 5]} 
   # Compare some fields
   disp_output(runs, total_energy, "Total Energy", 'extrinsic', config['etot'])
-  disp_output(runs, fermi_energy, "Fermi Energy", 'intrinsic', config['efermi'])
+  ef = disp_output(runs, fermi_energy, "Fermi Energy", 'intrinsic', config['efermi'])
   disp_output(runs, total_force, "Total Force", 'extrinsic', config['force'])
   disp_output(runs, pressure, "Pressure", 'intrinsic', config['stress'])
+  test_eigvals(runs, ef, config["bands"], config["nb"])
+  compare_vals(rmse(get_forces(runs)), "RMSE Force")
 
   print("------------------------------------------------------")    
 
   gvecs = {"OUTCAR": ["total plane-waves  NPLWV", 4], "run0.out": ["Kohn-Sham Wavefunctions", 5]}
   ecut = {"run0.out": ["kinetic-energy cutoff", 3], "OUTCAR": ["ENCUT  =  ", 4]}
   electroncs = {"run0.out": ["number of electrons       =", 4], "OUTCAR": ["NELECT =  ", 2]}
-
-  disp_output(runs, ecut, "Energy Cutoff")
-  disp_output(runs, gvecs, "# Gvectors")
+  iters = {"run0.out": ["convergence has been achieved", 5]}
+  nks = {"run0.out": ["number of k points=", 4]}
+  conv_thr = {"run0.out": ["convergence threshold     =", 3]}
+  disp_output(runs, ecut,     "Energy Cutoff")
+  disp_output(runs, gvecs,    "# Gvectors")
+  disp_output(runs, iters,    "# Iters")
+  disp_output(runs, nks,      "# Kpoints")
+  disp_output(runs, conv_thr, "Conv Thr")
 
 
   print("------------------------------------------------------")    
@@ -233,11 +271,12 @@ def run_test(inputs, exe, testdir, opts):
   nscf_time = {"run1.out": ["electrons    :", 4]}
   forces_time = {"run0.out": ["forces       :", 4]}
   stresses_time = {"run0.out": ["stress       :", 4]}
-#  disp_output(runs, scftime, "SCF Time", 'ratio')
   disp_output(runs, scf_time, "SCF Time", 'ratio')
   disp_output(runs, nscf_time, "NSCF Time", 'ratio')
   disp_output(runs, forces_time, "Force Time", 'ratio')
   disp_output(runs, stresses_time, "Stress Time", 'ratio')
+
+
   chdir(cwd)
   return 1
 '''
@@ -246,7 +285,6 @@ def run_test(inputs, exe, testdir, opts):
   disp_output(runs, "Total force", 3, "Total Force", config['force'], intrinsic=False)
   disp_output(runs, "temperature", 2, "Temperature", 0.01)
 
-  test_eigvals(runs, ef, config["bands"], config["nb"])
 '''
 
 '''
@@ -293,6 +331,8 @@ parser.add_option("--nproc", type=int, dest="nproc", default=1,
                   help="Number of MPI PEs")
 parser.add_option("--npot", type=int, dest="npot", default=-1,
                   help="Number of pots (srb pools)")
+parser.add_option("--npool", type=int, dest="npool", default=1,
+                  help="Number of pools")
 #parser.add_option("-f", "--force", action="store_true", dest="force", default=False,
 #                  help="Force the reference run to occur")
 #parser.add_option("-i", "--ipm", action="store_true", dest="ipm", default=False,
