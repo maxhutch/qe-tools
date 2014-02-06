@@ -151,7 +151,11 @@ def get_forces(runs):
 
 def rmse(data):
   rmses = []
-  for i in range(len(data)):
+  sqmag = [x*x for x in data[0]]
+  mean = sum(sqmag) / len(sqmag)
+  rmses.append(sqrt(mean))
+
+  for i in range(1,len(data)):
     diff = [data[i][j] - data[0][j] for j in range(len(data[0]))]
     sqdiff = [x*x for x in diff]
     mean = sum(sqdiff) / len(sqdiff)
