@@ -138,7 +138,9 @@ def get_forces(runs):
       for i in range(len(lines)):
         if "Forces acting on atoms" in lines[i]:
           break
-      i = i + 2
+      i = i + 1
+      while not "atom" in lines[i]:
+        i = i + 1
       forces = []
       while "atom" in lines[i]:
         toks = lines[i].split()
@@ -236,19 +238,20 @@ def run_test(inputs, exe, testdir, opts):
       loaded_config = json.load(f)
   default_config = {
                     "nb":     opts.nb,
-                    "etot":   7.34e-5,
+                    "etot":   0.005,
                     "efermi": 0.01,
                     "force":  0.01,
                     "stress": 1.,
-                    "bands":  0.01
+                    "bands":  0.01,
+                    "atoms": 1.
                    } 
   config = dict(list(default_config.items()) + list(loaded_config.items()))
-  total_energy = {"OUTCAR": ["free  energy   TOTEN", 4], "run0.out": ["!    total energy", 4, 13.6]}
+  total_energy = {"OUTCAR": ["free  energy   TOTEN", 4], "run0.out": ["!    total energy", 4, 13.6/config["atoms"]]}
   fermi_energy = {"OUTCAR": ["E-fermi", 2], "run0.out": ["the Fermi energy", 4]}
   total_force = {"run0.out":  ["Total force =", 3]}
   pressure =     {"OUTCAR": ["external pressure", 3], "run0.out": ["total   stress", 5]} 
   # Compare some fields
-  disp_output(runs, total_energy, "Total Energy", 'extrinsic', config['etot'])
+  disp_output(runs, total_energy, "Total Energy", 'intrinsic', config['etot'])
   ef = disp_output(runs, fermi_energy, "Fermi Energy", 'intrinsic', config['efermi'])
   disp_output(runs, total_force, "Total Force", 'extrinsic', config['force'])
   disp_output(runs, pressure, "Pressure", 'intrinsic', config['stress'])
