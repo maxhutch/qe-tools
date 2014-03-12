@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/shared/apps/rhel-6.2/tools/python-3.3.3/bin/python3
 
 from sys import argv, exit
 from os import system, chdir, mkdir, getcwd

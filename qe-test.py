@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/shared/apps/rhel-6.2/tools/python-3.3.3/bin/python3
 
 from sys import argv, exit
 from sys import stdout
@@ -10,7 +10,7 @@ import time
 from optparse import OptionParser
 import random
 import string 
-import numpy
+#import numpy
 import json
 from math import sqrt
 
@@ -95,6 +95,7 @@ def disp_output(runs, pattern, name, typ = 'display', tol = 1):
   compare_vals(vals, name, tol, typ)
   return vals
 
+'''
 def test_eigvals(runs, fermi_energies, tol, nb = -1):   
   if not exists('old/bands.dat'):
     return
@@ -127,7 +128,7 @@ def test_eigvals(runs, fermi_energies, tol, nb = -1):
   print("".join(output))
 
   return output
-
+'''
 
 def get_forces(runs):
   all_forces = []
@@ -255,7 +256,7 @@ def run_test(inputs, exe, testdir, opts):
   ef = disp_output(runs, fermi_energy, "Fermi Energy", 'intrinsic', config['efermi'])
   #disp_output(runs, total_force, "Total Force", 'extrinsic', config['force'])
   disp_output(runs, pressure, "Pressure", 'intrinsic', config['stress'])
-  test_eigvals(runs, ef, config["bands"], config["nb"])
+#  test_eigvals(runs, ef, config["bands"], config["nb"])
 #  compare_vals(rmse(get_forces(runs)), "RMSE Force")
 
   print("------------------------------------------------------")    
