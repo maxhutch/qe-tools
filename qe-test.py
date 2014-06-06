@@ -250,11 +250,24 @@ def run_test(inputs, exe, testdir, opts):
   fermi_energy = {"OUTCAR": ["E-fermi", 2], "run0.out": ["the Fermi energy", 4]}
   total_force = {"run0.out":  ["Total force =", 3]}
   pressure =     {"OUTCAR": ["external pressure", 3], "run0.out": ["total   stress", 5]} 
+  stressXX = {"OUTCAR": ["  Total      ", 1]}
+  stressYY = {"OUTCAR": ["  Total      ", 2]}
+  stressZZ = {"OUTCAR": ["  Total      ", 3]}
+  stressXY = {"OUTCAR": ["  Total      ", 4]}
+  stressXZ = {"OUTCAR": ["  Total      ", 6]}
+  stressYZ = {"OUTCAR": ["  Total      ", 5]}
+
   # Compare some fields
   disp_output(runs, total_energy, "Total Energy", 'intrinsic', config['etot'])
   ef = disp_output(runs, fermi_energy, "Fermi Energy", 'intrinsic', config['efermi'])
   #disp_output(runs, total_force, "Total Force", 'extrinsic', config['force'])
   disp_output(runs, pressure, "Pressure", 'intrinsic', config['stress'])
+  disp_output(runs, stressXX, "Stress (XX)", 'intrinsic', config['stress'])
+  disp_output(runs, stressYY, "Stress (YY)", 'intrinsic', config['stress'])
+  disp_output(runs, stressZZ, "Stress (ZZ)", 'intrinsic', config['stress'])
+  disp_output(runs, stressXY, "Stress (XY)", 'intrinsic', config['stress'])
+  disp_output(runs, stressXZ, "Stress (XZ)", 'intrinsic', config['stress'])
+  disp_output(runs, stressYZ, "Stress (YZ)", 'intrinsic', config['stress'])
   test_eigvals(runs, ef, config["bands"], config["nb"])
 #  compare_vals(rmse(get_forces(runs)), "RMSE Force")
 
@@ -285,11 +298,22 @@ def run_test(inputs, exe, testdir, opts):
   diag_time  = {"run.err": ["  DIAG", 1]}
   FandS_time = {"run.err": ["  FandS", 1]}
   rho_time   = {"run.err": ["  RHO", 1]}
+
+  frho_time   = {"run.err": ["  fRHO", 1]}
+  fvloc_time   = {"run.err": ["  fVloc", 1]}
+  fact_time   = {"run.err": ["  fAct", 1]}
+  fvnl_time   = {"run.err": ["  fVnl", 1]}
   else_time  = {"run.err": ["  Else", 1]}
   disp_output(runs, scf_time, "SCF Time", 'ratio')
   disp_output(runs, nscf_time, "NSCF Time", 'ratio')
   disp_output(runs, forces_time, "Force Time", 'ratio')
   disp_output(runs, stresses_time, "Stress Time", 'ratio')
+
+  disp_output(runs, frho_time, "fRho Time", 'display')
+  disp_output(runs, fvloc_time, "fVloc Time", 'display')
+  disp_output(runs, fvnl_time, "fVnl Time", 'display')
+  disp_output(runs, fact_time, "fAct Time", 'display')
+
   disp_output(runs, fft_time, "FFT Time", 'display')
   disp_output(runs, proj_time, "PROJ Time", 'display')
   disp_output(runs, vnl_time, "VNL Time", 'display')
