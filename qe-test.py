@@ -197,11 +197,11 @@ def run_test(inputs, exe, testdir, opts):
   runs.sort();
   runs = [x for x in runs if x != 'pseudo' and x != 'bin']
   # Make a copy of the 'ref' run for comparison
-  if 'ref' in runs:
-    runs.remove('ref')
-    copytree('./ref', './old')
+  if opts.ref in runs:
+    runs.remove(opts.ref)
+    copytree('./'+opts.ref, './old')
     runs.insert(0, 'old')
-    runs.insert(1, 'ref')
+    runs.insert(1, opts.ref)
 
   # mask the runs
   if opts.runs != None:
@@ -369,6 +369,8 @@ parser.add_option("-e", "--executable", dest="exe", default=None,
                   help="Executable directory to be tested")
 parser.add_option("-r", "--runs", dest="runs", default=None,
                   help="Only perform these runs (: separated)")
+parser.add_option("--ref", dest="ref", default="ref",
+                  help="Use REF as the reference for comparison")
 parser.add_option("-t", "--test", dest="test", default=None,
                   help="Directory containing the test")
 parser.add_option("-s", "--set", dest="test_set", default=None,
