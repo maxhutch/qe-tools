@@ -246,7 +246,7 @@ def run_test(inputs, exe, testdir, opts):
                     "atoms": 1.
                    } 
   config = dict(list(default_config.items()) + list(loaded_config.items()))
-  total_energy = {"OUTCAR": ["free  energy   TOTEN", 4], "run0.out": ["!    total energy", 4, 13.6/config["atoms"]]}
+  total_energy = {"OUTCAR": ["free  energy   TOTEN", 4, 1./config["atoms"]], "run0.out": ["!    total energy", 4, 13.6/config["atoms"]]}
   fermi_energy = {"OUTCAR": ["E-fermi", 2], "run0.out": ["the Fermi energy", 4]}
   total_force = {"run0.out":  ["Total force =", 3]}
   pressure =     {"OUTCAR": ["external pressure", 3], "run0.out": ["total   stress", 5]} 
