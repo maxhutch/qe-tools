@@ -18,6 +18,19 @@ runs TEST/RUN with a qe-run input file TEST.RUN.in.  A special run is called
 The runs are executed and outputs compared to the 'ref' run.  The 'ref' run
 is also re-executed to validate the build.  Here is [an example](https://github.com/maxhutch/qe-tests/tree/master/C).
 
+This script looks for a json config file in the test directory, TEST/config, that stores the number of bands, the number of atoms, and error tolerances.  The default config is:
+```json
+{
+  "nb":     opts.nb,
+  "etot":   0.005,
+  "efermi": 0.1,
+  "force":  0.01,
+  "stress": 1.,
+  "bands":  0.01,
+  "atoms": 1.
+}
+```
+
 This script can also handle VASP.  The structure is the same as for QE, but
 with the contents of TEST/RUN being the VASP input files, usually just 
 INCAR, POSCAR, POTCAR, KPOINTS.
